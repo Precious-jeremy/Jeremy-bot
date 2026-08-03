@@ -73,6 +73,32 @@ async function downloadAndConvert(videoUrl, outputBasePath) {
 const messageCache = new Map();
 const pendingChoices = new Map();
 
+// ─── Activity Logger ────────────────────────────────────────────────────────
+function logActivity(type, data) {
+  const time = new Date().toLocaleTimeString('en-US', { hour12: false, timeZone: 'Africa/Douala' });
+  const BAR = '─'.repeat(50);
+  if (type === 'message') {
+    const { fromMe, name, number, isGroup, groupId, content, mediaType } = data;
+    const dir   = fromMe ? '📤 OUT' : '📩  IN';
+    const chat  = isGroup ? `👥 Group  ${(groupId || '').replace('@g.us', '')}` : '💬 DM';
+    const who   = fromMe ? '🤖 BOT' : `👤 ${name || 'Unknown'}  ·  +${number}`;
+    const body  = content ? content.slice(0, 120) : `[${mediaType || 'media'}]`;
+    console.log(`\n┌${BAR}`);
+    console.log(`│  ${dir}   ${time}   ${chat}`);
+    console.log(`│  ${who}`);
+    console.log(`└─ ${body}`);
+  } else if (type === 'command') {
+    const { name, number, command, args, isGroup, groupId } = data;
+    const chat = isGroup ? `👥 Group  ${(groupId || '').replace('@g.us', '')}` : '💬 DM';
+    const argStr = args.length ? '  ' + args.join(' ') : '';
+    console.log(`\n┌${BAR}`);
+    console.log(`│  ⚡ CMD   ${time}   ${chat}`);
+    console.log(`│  👤 ${name || 'Unknown'}  ·  +${number}`);
+    console.log(`└─ .${command}${argStr}`);
+  }
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 // trackStats — writes lightweight usage stats to a JSON file inside the session's own auth folder
 function trackStats(authFolder, type) {
   try {
@@ -162,11 +188,11 @@ try {
       const statusCode = lastDisconnect?.error instanceof Boom ? lastDisconnect.error.output.statusCode : null;
       const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
       if (shouldReconnect && sock.authState.creds.registered) {
-        console.log('Reconnecting...');
+        console.log('🔄 Reconnecting...');
         startBot(authFolder, pairNumber);
       }
     } else if (connection === 'open') {
-      console.log('Bot connected successfully!');
+      console.log(`\n✅ Bot connected  ·  +${pairNumber}  ·  ${new Date().toLocaleTimeString('en-US', { hour12: false, timeZone: 'Africa/Douala' })}`);
       if (pairNumber !== OWNER_NUMBER) {
         const s = loadSessions();
         if (s[pairNumber]) {
@@ -235,7 +261,7 @@ try {
   sock.ev.on('messages.upsert', async ({ messages }) => {
     const msg = messages[0];
     if (!msg.message) return;
-    if (msg.message?.protocolMessage) { console.log('PROTOCOL MSG DETECTED, type:', msg.message.protocolMessage.type); }
+    if (msg.message?.protocolMessage) return; // internal protocol message, skip
     if (settings.antidelete && msg.message?.protocolMessage?.type === 0) {
       const delKey = msg.message.protocolMessage.key;
       const cacheKey = `${msg.key.remoteJid}_${delKey.id}`;
@@ -285,8 +311,26 @@ try {
       });
     }
     const text = msg.message.conversation || msg.message.extendedTextMessage?.text || '';
+
+    // ── Log every incoming/outgoing message to console ───────────────────────
+    {
+      const mediaType = ['imageMessage','videoMessage','audioMessage','stickerMessage','documentMessage']
+        .find(t => msg.message[t]);
+      const senderNum = (isGroup ? (msg.key.participant || sender) : sender)
+        .replace('@s.whatsapp.net','').replace('@g.us','');
+      logActivity('message', {
+        fromMe: msg.key.fromMe,
+        name: msg.pushName || 'Unknown',
+        number: senderNum,
+        isGroup,
+        groupId: isGroup ? sender : null,
+        content: text,
+        mediaType: mediaType ? mediaType.replace('Message','') : null,
+      });
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     if (settings.antimention && isGroup && !msg.key.fromMe) {
-    console.log('ANTIMENTION DEBUG:', JSON.stringify({on: settings.antimention, isGroup, fromMe: msg.key.fromMe, sender}));
       const mentioned = msg.message.extendedTextMessage?.contextInfo?.mentionedJid || [];
       if (mentioned.length > 0) {
         try {
@@ -439,6 +483,21 @@ try {
     const receivedAt = Number(msg.messageTimestamp) * 1000;
     const args = text.slice(PREFIX.length).trim().split(/ +/);
     const command = args.shift().toLowerCase();
+
+    // ── Log command to console ────────────────────────────────────────────────
+    {
+      const senderNum = (isGroup ? (msg.key.participant || sender) : sender)
+        .replace('@s.whatsapp.net','').replace('@g.us','');
+      logActivity('command', {
+        name: msg.pushName || 'Unknown',
+        number: senderNum,
+        command,
+        args,
+        isGroup,
+        groupId: isGroup ? sender : null,
+      });
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     const cmdEmojis = {
       play: '🎵', tiktok: '🎬', fb: '🎥', sticker: '🖼️', toimg: '🖼️',
