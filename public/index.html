@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JEREMY BOT — Dashboard</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: #030603;
+    color: #d0f0d0;
+    font-family: -apple-system, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  #matrix {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    opacity: 0.5;
+  }
+  .wrap {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .card {
+    background: rgba(10, 20, 10, 0.85);
+    backdrop-filter: blur(6px);
+    border: 1px solid #1e4a1e;
+    border-radius: 18px;
+    padding: 32px 24px;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 0 40px rgba(34, 197, 94, 0.15);
+  }
+  h1 {
+    text-align: center;
+    font-size: 24px;
+    margin-bottom: 6px;
+    color: #4ade80;
+    text-shadow: 0 0 12px rgba(74, 222, 128, 0.6);
+    letter-spacing: 1px;
+  }
+  .subtitle {
+    text-align: center;
+    font-size: 13px;
+    color: #8fae8f;
+    margin-bottom: 24px;
+  }
+  input {
+    width: 100%;
+    background: #061006;
+    border: 1px solid #2a4a2a;
+    color: #d0f0d0;
+    padding: 14px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    font-size: 15px;
+  }
+  input:focus { outline: none; border-color: #4ade80; }
+  button {
+    width: 100%;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: #05170a;
+    border: none;
+    padding: 14px;
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 15px;
+    cursor: pointer;
+    margin-bottom: 12px;
+    box-shadow: 0 0 16px rgba(34, 197, 94, 0.4);
+  }
+  button:disabled { opacity: 0.5; box-shadow: none; }
+  .toggle {
+    text-align: center;
+    font-size: 13px;
+    color: #6fae6f;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  .msg {
+    text-align: center;
+    font-size: 13px;
+    margin-bottom: 12px;
+    min-height: 18px;
+  }
+  .msg.error { color: #f87171; }
+  .msg.success { color: #4ade80; }
+  .code-display {
+    text-align: center;
+    font-size: 30px;
+    letter-spacing: 5px;
+    color: #4ade80;
+    text-shadow: 0 0 16px rgba(74, 222, 128, 0.7);
+    background: #061006;
+    border: 1px solid #2a4a2a;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .hidden { display: none; }
+  .steps { font-size: 13px; color: #8fae8f; line-height: 1.8; margin-top: 16px; }
+  .footer {
+    text-align: center;
+    font-size: 11px;
+    color: #4a6a4a;
+    margin-top: 20px;
+    letter-spacing: 2px;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="matrix"></canvas>
+
+<div class="wrap">
+<div class="card">
+
+  <div id="authSection">
+    <h1>⚡ JEREMY BOT</h1>
+    <div class="subtitle" id="authSubtitle">Log in to pair your bot</div>
+    <div class="msg" id="authMsg"></div>
+    <input type="text" id="username" placeholder="Username">
+    <input type="email" id="email" placeholder="Email">  
+    <input type="password" id="password" placeholder="Password">
+    <button id="authSubmitBtn">Log In</button>
+    <div class="toggle" id="authToggle">Don't have an account? Register</div>
+  </div>
+
+  <div id="pairSection" class="hidden">
+    <h1>🔗 Pair Your Bot</h1>
+    <div class="subtitle">Enter your WhatsApp number to get a pairing code</div>
+    <div class="msg" id="pairMsg"></div>
+    <input type="text" id="phoneNumber" placeholder="e.g. 237682333588">
+    <button id="pairBtn">Get Pairing Code</button>
+
+    <div id="codeBox" class="hidden">
+      <div class="code-display" id="codeDisplay"></div>
+      <div class="steps">
+        1. Open WhatsApp<br>
+        2. Go to Linked Devices<br>
+        3. Tap Link with phone number<br>
+        4. Enter the code above
+      </div>
+
+      <div style="margin-top:20px;text-align:center;">
+        <a href="https://wa.me/237682333588" target="_blank" style="display:inline-block;background:#25D366;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:bold;">
+          📱 Contact PRECIOUS JEREMY for help
+        </a>
+        <div style="margin-top:8px;color:#aaa;font-size:13px;">
+          237682333588 ✓ 237675877627
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">JEREMY BOT • FAST • SECURE • RELIABLE</div>
+
+</div>
+</div>
+
+<script>
+  // Matrix rain background + Flying Bullets 
+  const canvas = document.getElementById('matrix')
+  const ctx = canvas.getContext('2d');
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const botName = "JEREMYBOT";
+  const chars = (botName + "01アイウエオカキクケコサシスセソ$#@%&").split('');
+  const fontSize = 16;
+  let columns = Math.floor(canvas.width / fontSize);
+  let drops = Array(columns).fill(1);
+
+  function drawMatrix() {
+    ctx.fillStyle = 'rgba(3, 6, 3, 0.08)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#22c55e';
+    ctx.font = fontSize + 'px monospace';
+    for (let i = 0; i < drops.length; i++) {
+      const text = chars[Math.floor(Math.random() * chars.length)];
+      ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+      if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+        drops[i] = 0;
+      }
+      drops[i]++;
+    }
+  }
+  setInterval(drawMatrix, 50);
+
+  // App logic
+  let mode = 'login';
+  let token = localStorage.getItem('jeremybot_token') || null;
+
+  const authSection = document.getElementById('authSection');
+  const pairSection = document.getElementById('pairSection');
+  const authMsg = document.getElementById('authMsg');
+  const pairMsg = document.getElementById('pairMsg');
+
+  function showAuthMsg(text, type) {
+    authMsg.textContent = text;
+    authMsg.className = 'msg ' + (type || '');
+  }
+  function showPairMsg(text, type) {
+    pairMsg.textContent = text;
+    pairMsg.className = 'msg ' + (type || '');
+  }
+
+  document.getElementById('authToggle').onclick = () => {
+    mode = mode === 'login' ? 'register' : 'login';
+    document.getElementById('authSubtitle').textContent =
+      mode === 'login' ? 'Log in to pair your WhatsApp bot' : 'Create an account to get started';
+    document.getElementById('authSubmitBtn').textContent =
+      mode === 'login' ? 'Log In' : 'Register';
+    document.getElementById('authToggle').textContent =
+      mode === 'login' ? "Don't have an account? Register" : 'Already have an account? Log In';
+    showAuthMsg('');
+  };
+
+  document.getElementById('authSubmitBtn').onclick = async () => {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+      const email = document.getElementById('email').value.trim();
+    if (!username || !password) return showAuthMsg('Please fill both fields', 'error');
+
+    const endpoint = mode === 'login' ? '/api/login' : '/api/register';
+    showAuthMsg('Please wait...');
+
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password , email})
+      });
+      const data = await res.json();
+
+      if (!res.ok) return showAuthMsg(data.error || 'Something went wrong', 'error');
+
+      if (mode === 'register') {
+        showAuthMsg('Account created! Logging you in...', 'success');
+        mode = 'login';
+        document.getElementById('authSubmitBtn').click();
+        return;
+      }
+
+      token = data.token;
+      localStorage.setItem('jeremybot_token', token);
+      showPairScreen();
+    } catch (e) {
+      showAuthMsg('Network error, try again', 'error');
+    }
+  };
+
+  document.getElementById('pairBtn').onclick = async () => {
+    const phoneNumber = document.getElementById('phoneNumber').value.trim();
+    if (!phoneNumber) return showPairMsg('Enter your WhatsApp number with your country code like this eg 237', 'error');
+
+    showPairMsg('Requesting pairing code...');
+    document.getElementById('pairBtn').disabled = true;
+
+    try {
+      const res = await fetch('/api/pair', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify({ phoneNumber })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showPairMsg(data.error || 'Something went wrong', 'error');
+        document.getElementById('pairBtn').disabled = false;
+        return;
+      }
+
+      showPairMsg('Connected!', 'success');
+      document.getElementById('codeBox').classList.remove('hidden');
+      document.getElementById('codeDisplay').textContent = data.pairingCode || '(check server)';
+    } catch (e) {
+      showPairMsg('Network error, try again', 'error');
+      document.getElementById('pairBtn').disabled = false;
+    }
+  };
+
+  function showPairScreen() {
+    authSection.classList.add('hidden');
+    pairSection.classList.remove('hidden');
+  }
+
+  if (token) showPairScreen();
+</script>
+
+</body>
+</html>

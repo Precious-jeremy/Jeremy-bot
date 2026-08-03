@@ -1,0 +1,78 @@
+{
+  "users": [
+    {
+      "id": "1783477136578",
+      "username": "jeremy",
+      "passwordHash": "$2b$10$aShXiheZ29p8BQW9LPXsB.Wg1T092iCnjg.hQfhY.ymqwAzwB9zrW",
+      "role": "admin",
+      "createdAt": "2026-07-08T02:18:56.578Z"
+    },
+    {
+      "id": "1784028650665",
+      "username": "Precious Jeremy",
+      "passwordHash": "$2b$10$6iHiruSsujHQCgWwqzalfOfU3aTyt8/UKE0Usv3FTK7pcJE2NTGOm",
+      "role": "user",
+      "createdAt": "2026-07-14T11:30:50.665Z"
+    },
+    {
+      "id": "1784353290187",
+      "username": "Pjeremy",
+      "email": "lilcagey557@gmail.com",
+      "passwordHash": "$2b$10$0d7ieZ9f0X1AE.otQEHKAuTwIel8KH1RkJw1SLDlHGMCkceMvb.QO",
+      "role": "user",
+      "createdAt": "2026-07-18T05:41:30.187Z"
+    },
+    {
+      "id": "1784353563844",
+      "username": "Williammanner",
+      "email": "itzlirontine2008@gmail.com",
+      "passwordHash": "$2b$10$pC9UyD48kSTonpWNGIED9eZDSOZZl/PuJY6XZPG/hhevf7DsriB3y",
+      "role": "user",
+      "createdAt": "2026-07-18T05:46:03.844Z"
+    }
+  ],
+  "sessions": [
+    {
+      "id": "1784202489916",
+      "userId": "1784028650665",
+      "phoneNumber": "237682333588",
+      "status": "connected",
+      "connectedAt": null,
+      "folderPath": "sessions/237682333588"
+    },
+    {
+      "id": "1784202641573",
+      "userId": "1784028650665",
+      "phoneNumber": "237675877627",
+      "status": "connected",
+      "connectedAt": null,
+      "folderPath": "sessions/237675877627"
+    },
+    {
+      "id": "1784353740486",
+      "userId": "1784353563844",
+      "phoneNumber": "+237 6 51 20 73 32",
+      "status": "connected",
+      "connectedAt": null,
+      "folderPath": "sessions/237651207332"
+    },
+    {
+      "id": "1784353822579",
+      "userId": "1784353563844",
+      "phoneNumber": "+237 6 51 20 73 32",
+      "status": "connected",
+      "connectedAt": null,
+      "folderPath": "sessions/237651207332"
+    },
+    {
+      "id": "1784356592770",
+      "userId": "1784028650665",
+      "phoneNumber": "237675877627",
+      "status": "connected",
+      "connectedAt": null,
+      "folderPath": "sessions/237675877627"
+    }
+  ],
+  "logs": [],
+  "statistics": []
+}
