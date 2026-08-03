@@ -58,18 +58,17 @@ function formatUptime(ms) {
 }
 
 async function downloadAndConvert(videoUrl, outputBasePath) {
-  
-  const ytdl = require('@distube/ytdl-core');
-  const ffmpeg = require('fluent-ffmpeg');
-  return new Promise((resolve, reject) => {
-    const outputPath = `${outputBasePath}.mp3`;
-    const stream = ytdl(videoUrl, { filter: 'audioonly', quality: 'highestaudio' });
-    ffmpeg(stream)
-      .audioBitrate(96)
-      .save(outputPath)
-      .on('end', () => resolve(outputPath))
-      .on('error', reject);
+  const ytDlp = require('yt-dlp-exec');
+  const outputPath = `${outputBasePath}.mp3`;
+  await ytDlp(videoUrl, {
+    extractAudio: true,
+    audioFormat: 'mp3',
+    audioBitrate: '96',
+    output: outputPath,
+    noCheckCertificates: true,
+    noWarnings: true,
   });
+  return outputPath;
 }
 const messageCache = new Map();
 const pendingChoices = new Map();
@@ -716,7 +715,14 @@ _${settings.footerText}_`;
           const vidBase = path.join(os.tmpdir(), `vid_${Date.now()}`);
           try {
             console.log('VIDEO: starting download at', new Date().toISOString());
-            await execPromise(`yt-dlp -f "bestvideo[height<=720]+bestaudio/best[height<=720]" -o "${vidBase}.%(ext)s" "${vResult.url}"`, { maxBuffer: 1024*1024*50 });
+            const ytDlp = require('yt-dlp-exec');
+            await ytDlp(vResult.url, {
+              format: 'bestvideo[height<=720]+bestaudio/best[height<=720]/best[height<=720]',
+              output: `${vidBase}.%(ext)s`,
+              mergeOutputFormat: 'mp4',
+              noCheckCertificates: true,
+              noWarnings: true,
+            });
             const files = fs.readdirSync(os.tmpdir()).filter(f => f.startsWith(path.basename(vidBase)));
             console.log('VIDEO: download finished at', new Date().toISOString());
             const vf = path.join(os.tmpdir(), files[0]);
@@ -756,12 +762,19 @@ case 'tt': {
   }
   await sock.sendMessage(sender, { text: `⏳ Downloading TikTok video...` });
   try {
-    const { ttdl } = require('btch-downloader');
-    const result = await ttdl(url);
-    console.log('TikTok result:', JSON.stringify(result));
-    const videoUrl = (Array.isArray(result.video) && result.video.length > 0) ? result.video[0] : (result.video_hd || result.url);
-    if (!videoUrl) throw new Error('No video URL in result');
-    await sock.sendMessage(sender, { video: { url: videoUrl }, caption: `✅ Here's your TikTok video` });
+    const ytDlp = require('yt-dlp-exec');
+    const ttBase = path.join(os.tmpdir(), `tt_${Date.now()}`);
+    await ytDlp(url, {
+      output: `${ttBase}.%(ext)s`,
+      format: 'best',
+      noCheckCertificates: true,
+      noWarnings: true,
+    });
+    const ttFiles = fs.readdirSync(os.tmpdir()).filter(f => f.startsWith(path.basename(ttBase)));
+    if (!ttFiles.length) throw new Error('No file downloaded');
+    const ttFile = path.join(os.tmpdir(), ttFiles[0]);
+    await sock.sendMessage(sender, { video: fs.readFileSync(ttFile), caption: `✅ Here's your TikTok video` });
+    fs.unlinkSync(ttFile);
   } catch (e) {
     console.log('TikTok error:', e);
     await sock.sendMessage(sender, { text: `❌ Couldn't download that video.` });
@@ -778,14 +791,29 @@ case 'tt': {
           await sock.sendMessage(sender, { text: `⏳ Downloading Facebook video...` });
           const fbBase = path.join(os.tmpdir(), `fb_${Date.now()}`);
           try {
-            await execPromise(`yt-dlp --impersonate chrome -S "res:720,codec:avc1" -o "${fbBase}.%(ext)s" "${fbUrl}"`, { maxBuffer: 1024*1024*50 });
+            const ytDlp = require('yt-dlp-exec');
+            await ytDlp(fbUrl, {
+              format: 'bestvideo[height<=720]+bestaudio/best[height<=720]/best[height<=720]',
+              output: `${fbBase}.%(ext)s`,
+              mergeOutputFormat: 'mp4',
+              noCheckCertificates: true,
+              noWarnings: true,
+            });
             const files = fs.readdirSync(os.tmpdir()).filter(f => f.startsWith(path.basename(fbBase)));
+            if (!files.length) throw new Error('No file downloaded');
             const vf = path.join(os.tmpdir(), files[0]);
-            const outFile = `${fbBase}_h264.mp4`;
-            await execPromise(`ffmpeg -i "${vf}" -c:v libx264 -preset veryfast -crf 26 -c:a aac -movflags +faststart "${outFile}"`, { maxBuffer: 1024*1024*50 });
-            await sock.sendMessage(sender, { video: fs.readFileSync(outFile), caption: '✅ ' + BOT_NAME });
+            const { stdout: vcodec } = await execPromise(`ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of csv=p=0 "${vf}"`);
+            const { stdout: acodec } = await execPromise(`ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of csv=p=0 "${vf}"`);
+            const isCompatible = vcodec.trim() === 'h264' && acodec.trim() === 'aac';
+            let finalFile = vf;
+            if (!isCompatible) {
+              const outFile = `${fbBase}_h264.mp4`;
+              await execPromise(`ffmpeg -i "${vf}" -c:v libx264 -preset veryfast -crf 26 -c:a aac -movflags +faststart "${outFile}"`, { maxBuffer: 1024*1024*50 });
+              finalFile = outFile;
+            }
+            await sock.sendMessage(sender, { video: fs.readFileSync(finalFile), caption: '✅ ' + BOT_NAME });
             fs.unlinkSync(vf);
-            fs.unlinkSync(outFile);
+            if (finalFile !== vf) fs.unlinkSync(finalFile);
           } catch (e) {
             console.log('Facebook error:', e);
             await sock.sendMessage(sender, { text: `❌ Couldn't download that video.` });
